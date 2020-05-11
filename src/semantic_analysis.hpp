@@ -4,8 +4,10 @@
 #include <string>
 #include <vector>
 
-#include "./lexical_analysis.hpp"
 #include "./grammatical_analysis.hpp"
+#include "./lexical_analysis.hpp"
+#include "./util.hpp"
+
 
 /**
  * @brief 语义分析过程中符号的具体信息
@@ -130,7 +132,6 @@ public:
         main_label_ = Npos;
         /* 初始回填层次为0，表示不需要回填 */
         backpatching_level_ = 0;
-
     }
 
     int
@@ -150,7 +151,7 @@ public:
     }
 
     bool
-    SemanticAnalysis(const Item& production);
+    Analysis(const Item& production) ;
 
 private:
     std::vector<SymbolAttribute> symbol_list_;         /* 语义分析过程的符号数组 */
@@ -166,7 +167,7 @@ private:
     int main_label_; /* main 函数对应的四元式标号 */
 };
 
-bool Semantic::SemanticAnalysis(const Item &production) {
+bool Semantic::Analysis(const Item &production) {
     return true;
 }
 

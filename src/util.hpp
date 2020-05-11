@@ -14,6 +14,36 @@
 #include <vector>
 
 /**
+ * @brief LR(1)的项目/原始文法(包含拓展产生式)产生式
+ *        left         - 产生式的左部符号Symbol的index
+ *        right        - 产生式右部符号的index列表
+ *        is_lr1_item  - 是否是lr1的项
+ *        dot_pos      - lr1的项时有效，表示点的位置
+ *        pro_index    - 该产生式/项目对应的产生式列表中的index
+ */
+typedef struct Item {
+    static constexpr int Npos = -1; // 非法位置
+    int                  left;
+    std::vector<int>     right;
+    bool                 is_lr1_item;
+    int                  dot_pos;
+    int                  pro_index;
+    Item(int left, const std::vector<int>& right, bool is_lr1_item = false, int dot_pos = Npos, int pro_index = Npos)
+        : left(left), right(right), is_lr1_item(is_lr1_item), dot_pos(dot_pos), pro_index(pro_index) {}
+    Item(int left, std::vector<int>&& right, bool is_lr1_item = false, int dot_pos = Npos, int pro_index = Npos)
+        : left(left), right(std::move(right)), is_lr1_item(is_lr1_item), dot_pos(dot_pos), pro_index(pro_index) {}
+
+    friend bool
+    operator==(const Item& a, const Item& b);
+} Item;
+
+bool
+operator==(const Item& a, const Item& b) {
+    return (a.is_lr1_item == b.is_lr1_item && a.dot_pos == b.dot_pos && a.pro_index == b.pro_index && a.left == b.left
+            && a.right == b.right);
+}
+
+/**
  *  @brief  : 删除string首尾的空字符 : 空格、tab、'\n'、'\r'等
  *  @param  : str  将被trim的字符串
  *  @return : @a %str 被trim后的引用，
