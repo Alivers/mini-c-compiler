@@ -153,12 +153,12 @@ string
 -
 vector
 -
-./util.hpp
-/root/vsc-repo/homework/compiling/src/./util.hpp
-./lexical_analysis.hpp
-/root/vsc-repo/homework/compiling/src/./lexical_analysis.hpp
 ./grammatical_analysis.hpp
 /root/vsc-repo/homework/compiling/src/./grammatical_analysis.hpp
+./lexical_analysis.hpp
+/root/vsc-repo/homework/compiling/src/./lexical_analysis.hpp
+./util.hpp
+/root/vsc-repo/homework/compiling/src/./util.hpp
 
 /root/vsc-repo/homework/compiling/src/util.hpp
 algorithm

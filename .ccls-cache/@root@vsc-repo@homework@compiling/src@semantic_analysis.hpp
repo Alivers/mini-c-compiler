@@ -8,61 +8,79 @@
 #include "./lexical_analysis.hpp"
 #include "./util.hpp"
 
-
 /**
- * @brief ÓïÒå·ÖÎö¹ı³ÌÖĞ·ûºÅµÄ¾ßÌåĞÅÏ¢
+ * @brief è¯­ä¹‰åˆ†æè¿‡ç¨‹ä¸­ç¬¦å·çš„å…·ä½“ä¿¡æ¯
  */
 struct SymbolAttribute {
-    token_t token;          /* ·ûºÅ±êÊ¶ */
-    value_t value;          /* ·ûºÅµÄ¾ßÌåÖµ */
-    int     table_index;    /* ·ûºÅËù´¦µÄtableµÄindex */
-    int     in_table_index; /* ·ûºÅËù´¦µÄtableÄÚ²¿µÄindex */
-    SymbolAttribute(const token_t& token = "", const value_t& value = "", const int table_idx = -1, const int in_table_idx = -1)
-        : token(token), value(value), table_index(table_idx), in_table_index(in_table_idx) {}
+    token_t token;          /* ç¬¦å·æ ‡è¯† */
+    value_t value;          /* ç¬¦å·çš„å…·ä½“å€¼ */
+    int     row;            /* æ‰€åœ¨è¡Œå· */
+    int     table_index;    /* ç¬¦å·æ‰€å¤„çš„tableçš„index */
+    int     in_table_index; /* ç¬¦å·æ‰€å¤„çš„tableå†…éƒ¨çš„index */
+    SymbolAttribute(const token_t& token        = "",
+                    const value_t& value        = "",
+                    const int      row          = -1,
+                    const int      table_idx    = -1,
+                    const int      in_table_idx = -1)
+        : token(token), value(value), row(row), table_index(table_idx), in_table_index(in_table_idx) {}
 };
 /**
- * @brief ÓïÒå·ÖÎö¹ı³ÌÖĞ±íÊ¾·ûµÄ¾ßÌåĞÅÏ¢
+ * @brief è¯­ä¹‰åˆ†æè¿‡ç¨‹ä¸­è¡¨ç¤ºç¬¦çš„å…·ä½“ä¿¡æ¯
  */
 struct IdentifierInfo {
     /**
-     * @brief ÀàĞÍËµÃ÷·û£ºint¡¢float¡¢void
-     * @brief ±êÊ¶·ûÀà±ğ£ºº¯Êı¡¢±äÁ¿¡¢ÁÙÊ±±äÁ¿¡¢³£Á¿
+     * @brief ç±»å‹è¯´æ˜ç¬¦ï¼šintã€floatã€void
+     * @brief æ ‡è¯†ç¬¦ç±»åˆ«ï¼šå‡½æ•°ã€å˜é‡ã€ä¸´æ—¶å˜é‡ã€å¸¸é‡
      */
-    enum SpecifierType { Int, Float, Void };
-    enum IdentifierType { Function, Variable, TempVar, ConstVal };
-    IdentifierType id_type; /* ±êÊ¶·ûÀà±ğ */
-    SpecifierType  sp_type; /* ±ä(³£)Á¿ÀàĞÍ/º¯Êı·µ»ØÀàĞÍ */
-    std::string    id_name; /* ±êÊ¶·ûÃû/³£Á¿Öµ */
+    using SpecifierType = std::string;
+    enum IdentifierType { Function, Variable, TempVar, ConstVar, ReturnVar };
+    IdentifierType id_type; /* æ ‡è¯†ç¬¦ç±»åˆ« */
+    SpecifierType  sp_type; /* å˜(å¸¸)é‡ç±»å‹/å‡½æ•°è¿”å›ç±»å‹ */
+    std::string    id_name; /* æ ‡è¯†ç¬¦å/å¸¸é‡å€¼ */
 
-    int parameter_num;        /* º¯Êı²ÎÊı¸öÊı */
-    int function_entry;       /* º¯ÊıÈë¿ÚµØÖ·(ËÄÔªÊ½µÄ±êºÅ) */
-    int function_table_index; /* º¯ÊıµÄº¯Êı·ûºÅ±íÔÚÕû¸ö³ÌĞòµÄ·ûºÅ±íÁĞ±íÖĞµÄË÷Òı */
+    int parameter_num;        /* å‡½æ•°å‚æ•°ä¸ªæ•° */
+    int function_entry;       /* å‡½æ•°å…¥å£åœ°å€(å››å…ƒå¼çš„æ ‡å·) */
+    int function_table_index; /* å‡½æ•°çš„å‡½æ•°ç¬¦å·è¡¨åœ¨æ•´ä¸ªç¨‹åºçš„ç¬¦å·è¡¨åˆ—è¡¨ä¸­çš„ç´¢å¼• */
+
+    IdentifierInfo() = default;
+    IdentifierInfo(const IdentifierType id_type,
+                   const SpecifierType& sp_type        = "",
+                   const std::string&   id_name        = "",
+                   const int            parameter_num  = 0,
+                   const int            function_entry = -1,
+                   const int            fun_table_idx  = -1)
+        : id_type(id_type),
+          sp_type(sp_type),
+          id_name(id_name),
+          parameter_num(parameter_num),
+          function_entry(function_entry),
+          function_table_index(fun_table_idx) {}
 };
 
 /**
- * @brief ·ûºÅ±í¶¨Òå
+ * @brief ç¬¦å·è¡¨å®šä¹‰
  */
 class SymbolTable {
 public:
     /**
-     * @brief ·ûºÅ±íÃ¶¾ÙÀàĞÍ¶¨Òå
+     * @brief ç¬¦å·è¡¨æšä¸¾ç±»å‹å®šä¹‰
      */
     enum SymbolTableType {
-        GlobalTable,   /* È«¾Ö±í */
-        FunctionTable, /* º¯Êı±í */
-        BlockTable,    /* ¿é¼¶±í */
-        TempTable      /* ÁÙÊ±±í */
+        GlobalTable,   /* å…¨å±€è¡¨ */
+        FunctionTable, /* å‡½æ•°è¡¨ */
+        BlockTable,    /* å—çº§è¡¨ */
+        TempTable      /* ä¸´æ—¶è¡¨ */
     };
 
 public:
-    SymbolTable(const SymbolTableType type, std::string&& name) : table_type_(type), table_name_(std::move(name)) {}
+    SymbolTable(const SymbolTableType type, const std::string& name) : table_type_(type), table_name_(std::move(name)) {}
 
     SymbolTableType
-    table_type(void) {
+    table_type(void) const {
         return this->table_type_;
     }
     std::string
-    table_name(void) {
+    table_name(void) const {
         return this->table_name_;
     }
     std::vector<IdentifierInfo>&
@@ -71,10 +89,10 @@ public:
     }
 
     int
-    FindSymbol(const IdentifierInfo& id) {
+    FindSymbol(const std::string& id_name) const {
         int len = static_cast<int>(table_.size());
         for (int i = 0; i < len; ++i) {
-            if (table_[i].id_name == id.id_name) {
+            if (table_[i].id_name == id_name) {
                 return i;
             }
         }
@@ -83,12 +101,12 @@ public:
 
     int
     AddSymbol(const IdentifierInfo& id) {
-        int pos = FindSymbol(id);
+        int pos = FindSymbol(id.id_name);
         if (pos == -1) {
             table_.push_back(id);
             pos = static_cast<int>(table_.size() - 1);
         } else {
-            pos = -1; /* ÒÑ´æÔÚ Ìí¼ÓÊ§°Ü */
+            pos = -1; /* å·²å­˜åœ¨ æ·»åŠ å¤±è´¥ */
         }
         return pos;
     }
@@ -98,40 +116,44 @@ public:
     }
 
 private:
-    SymbolTableType             table_type_; /* ±íÀàĞÍ */
-    std::vector<IdentifierInfo> table_;      /* ·ûºÅÁĞ±í */
-    std::string                 table_name_; /* ±íÃû */
+    SymbolTableType             table_type_; /* è¡¨ç±»å‹ */
+    std::vector<IdentifierInfo> table_;      /* ç¬¦å·åˆ—è¡¨ */
+    std::string                 table_name_; /* è¡¨å */
 };
 
 /**
- * @brief ËÄÔªÊ½¶¨Òå
+ * @brief å››å…ƒå¼å®šä¹‰
  */
 struct Quadruple {
-    int         label;   /* ËÄÔªÊ½µÄ±êºÅ */
-    std::string operate; /* ²Ù×÷ÀàĞÍ */
-    std::string arg_1;   /* ²ÎÊı 1 */
-    std::string arg_2;   /* ²ÎÊı 2 */
-    std::string result;  /* ½á¹û */
+    int         label;   /* å››å…ƒå¼çš„æ ‡å· */
+    std::string operate; /* æ“ä½œç±»å‹ */
+    std::string arg_1;   /* å‚æ•° 1 */
+    std::string arg_2;   /* å‚æ•° 2 */
+    std::string result;  /* ç»“æœ */
+    Quadruple(const int label, const std::string& ope, const std::string& arg1, const std::string& arg2, const std::string& res)
+        : label(label), operate(ope), arg_1(arg1), arg_2(arg2), result(res) {}
 };
 
 class Semantic {
 public:
     static constexpr int Npos = -1;
     Semantic() {
-        /* ´´½¨È«¾Ö·ûºÅ±í */
+        /* åˆ›å»ºå…¨å±€ç¬¦å·è¡¨ */
         tables_.push_back(SymbolTable(SymbolTable::GlobalTable, "global table"));
-        /* µ±Ç°×÷ÓÃÓòÎªÈ«¾Ö×÷ÓÃÓò */
+        /* å½“å‰ä½œç”¨åŸŸä¸ºå…¨å±€ä½œç”¨åŸŸ */
         current_table_stack_.push_back(0);
 
-        /* ËùÓĞÁÙÊ±±äÁ¿´æÔÚÒ»¸ö±íÖĞ */
+        /* æ‰€æœ‰ä¸´æ—¶å˜é‡å­˜åœ¨ä¸€ä¸ªè¡¨ä¸­ */
         tables_.push_back(SymbolTable(SymbolTable::TempTable, "temp variable table"));
 
-        /* ´Ó 1 ¿ªÊ¼Éú³ÉËÄÔªÊ½±êºÅ£»0ºÅÓÃÓÚ (j, -, -, main_address) */
+        /* ä» 1 å¼€å§‹ç”Ÿæˆå››å…ƒå¼æ ‡å·ï¼›0å·ç”¨äº (j, -, -, main_address) */
         next_label_num_ = 1;
-        /* mainº¯Êı±êºÅÖÃ·Ç·¨ */
+        /* mainå‡½æ•°æ ‡å·ç½®éæ³• */
         main_label_ = Npos;
-        /* ³õÊ¼»ØÌî²ã´ÎÎª0£¬±íÊ¾²»ĞèÒª»ØÌî */
+        /* åˆå§‹å›å¡«å±‚æ¬¡ä¸º0ï¼Œè¡¨ç¤ºä¸éœ€è¦å›å¡« */
         backpatching_level_ = 0;
+        /* ä¸´æ—¶å˜é‡è®¡æ•° */
+        temp_var_count = 0;
     }
 
     int
@@ -150,24 +172,532 @@ public:
         return true;
     }
 
+    std::string
+    GetNewTmpVar() {
+        return "T" + std::to_string(temp_var_count++);
+    }
+
+    void PrintQuadruple(std::ostream& os) {
+        os << "label : operate, arg1, arg2, result" << std::endl;
+        for (auto &qua : quadruples_) {
+            os << qua.label << " : " << qua.operate << ", " << qua.arg_1 << ", " << qua.arg_2 << ", " << qua.result << std::endl;
+        }
+    }
+
     bool
-    Analysis(const Item& production) ;
+    Analysis(const std::string& pro_left, const std::vector<std::string>& pro_right);
+
+    void
+    PrintQuadruple() const {}
 
 private:
-    std::vector<SymbolAttribute> symbol_list_;         /* ÓïÒå·ÖÎö¹ı³ÌµÄ·ûºÅÊı×é */
-    std::vector<SymbolTable>     tables_;              /* ³ÌĞòËùÓĞ·ûºÅ±íÊı×é */
-    std::vector<int>             current_table_stack_; /* µ±Ç°×÷ÓÃÓò¶ÔÓ¦µÄ·ûºÅ±í Ë÷ÒıÕ» */
+    std::vector<SymbolAttribute> symbol_list_;         /* è¯­ä¹‰åˆ†æè¿‡ç¨‹çš„ç¬¦å·æ•°ç»„ */
+    std::vector<SymbolTable>     tables_;              /* ç¨‹åºæ‰€æœ‰ç¬¦å·è¡¨æ•°ç»„ */
+    std::vector<int>             current_table_stack_; /* å½“å‰ä½œç”¨åŸŸå¯¹åº”çš„ç¬¦å·è¡¨ ç´¢å¼•æ ˆ */
 
-    int next_label_num_; /* ÏÂÒ»¸öËÄÔªÊ½µÄ±êºÅ */
+    int next_label_num_; /* ä¸‹ä¸€ä¸ªå››å…ƒå¼çš„æ ‡å· */
 
-    std::vector<Quadruple> quadruples_;         /* Éú³ÉµÄËÄÔªÊ½ */
-    int                    backpatching_level_; /* »ØÌî²ã´Î */
-    std::vector<int>       backpatching_list_;  /* »ØÌîÁĞ±í */
+    int temp_var_count; /* ä¸´æ—¶å˜é‡è®¡æ•° */
 
-    int main_label_; /* main º¯Êı¶ÔÓ¦µÄËÄÔªÊ½±êºÅ */
+    std::vector<Quadruple> quadruples_;         /* ç”Ÿæˆçš„å››å…ƒå¼ */
+    int                    backpatching_level_; /* å›å¡«å±‚æ¬¡ */
+    std::vector<int>       backpatching_list_;  /* å›å¡«åˆ—è¡¨ */
+
+    int main_label_; /* main å‡½æ•°å¯¹åº”çš„å››å…ƒå¼æ ‡å· */
 };
 
-bool Semantic::Analysis(const Item &production) {
+bool
+Semantic::Analysis(const std::string& pro_left, const std::vector<std::string>& pro_right) {
+    if ("Program" == pro_left) {
+        /* Program -> ExtDefList */
+        if (Semantic::Npos == main_label_) {
+            std::cerr << "è¯­ä¹‰é”™è¯¯ : æœªå®šä¹‰ main å‡½æ•°" << std::endl;
+            return false;
+        }
+        PrintQuadruple();
+        if ("@" != pro_right[0]) {
+            int count = static_cast<int>(pro_right.size());
+            while (count--) {
+                this->symbol_list_.pop_back();
+            }
+        }
+        this->symbol_list_.push_back(SymbolAttribute(pro_left));
+    } else if ("ExtDef" == pro_left && "<ID>" == pro_right[1]) {
+        /* ExtDef -> Specifier <ID> ; */
+        int         list_length = static_cast<int>(symbol_list_.size());
+        const auto& specifier   = symbol_list_[list_length - 3];
+        const auto& identifier  = symbol_list_[list_length - 2];
+
+        bool existed = false;
+        for (int scope_layer = current_table_stack_.size() - 1; scope_layer >= 0; --scope_layer) {
+            const auto& table = tables_[current_table_stack_[scope_layer]];
+            if (table.FindSymbol(identifier.value) != -1) {
+                existed = true;
+                break;
+            }
+        }
+
+        if (existed) {
+            std::cerr << "è¯­ä¹‰é”™è¯¯ : ç¬¬ " << identifier.row << " è¡Œï¼Œå˜é‡ " << identifier.value << " é‡å®šä¹‰" << std::endl;
+            return false;
+        }
+
+        IdentifierInfo variable;
+        variable.id_name = identifier.value;
+        variable.id_type = IdentifierInfo::Variable;
+        variable.sp_type = IdentifierInfo::SpecifierType(specifier.value);
+
+        tables_[current_table_stack_.back()].AddSymbol(variable);
+
+        int count = static_cast<int>(pro_right.size());
+        while (count--) {
+            this->symbol_list_.pop_back();
+        }
+        this->symbol_list_.push_back(SymbolAttribute(pro_left, identifier.value, identifier.row));
+
+    } else if ("Specifier" == pro_left) {
+        /* Specifier -> void | int | float */
+        int         list_length = static_cast<int>(symbol_list_.size());
+        const auto& specifier   = symbol_list_[list_length - 1];
+        int         count       = static_cast<int>(pro_right.size());
+        while (count--) {
+            this->symbol_list_.pop_back();
+        }
+        this->symbol_list_.push_back(SymbolAttribute(pro_left, specifier.value, specifier.row));
+    } else if ("CreateFunTable_m" == pro_left) {
+        /* CreateFunTable_m -> @ */
+        /* æ­¤æ—¶ symbol_list_ çš„æœ€åä¸€ä¸ªç¬¦å·ä¸º å‡½æ•°å
+           FunDec -> <ID> CreateFunTable_m ( VarList )
+           é¦–å…ˆåˆ¤æ–­å‡½æ•°åæ˜¯å¦é‡å®šä¹‰
+         */
+        int         list_length = static_cast<int>(symbol_list_.size());
+        const auto& identifier  = symbol_list_[list_length - 1];
+        const auto& specifier   = symbol_list_[list_length - 2];
+        if (tables_[0].FindSymbol(identifier.value) != -1) {
+            std::cerr << "è¯­ä¹‰é”™è¯¯ : ç¬¬ " << identifier.row << " è¡Œï¼Œå‡½æ•° " << identifier.value << " é‡å®šä¹‰" << std::endl;
+            return false;
+        }
+        /* åˆ›å»ºæ–°çš„å‡½æ•°è¡¨ */
+        tables_.push_back(SymbolTable(SymbolTable::FunctionTable, identifier.value));
+        /* åœ¨å…¨å±€ç¬¦å·è¡¨ä¸­åˆ›å»ºå‡½æ•°ç¬¦å·é¡¹ */
+        tables_[0].AddSymbol(
+            IdentifierInfo(IdentifierInfo::Function, specifier.value, identifier.value, 0, 0, tables_.size() - 1));
+        /* è¿›å…¥æ–°çš„å‡½æ•°ä½œç”¨åŸŸ */
+        current_table_stack_.push_back(tables_.size() - 1);
+
+        IdentifierInfo return_val;
+        return_val.id_type = IdentifierInfo::ReturnVar;
+        return_val.id_name = tables_.back().table_name() + "_ret_val";
+        return_val.sp_type = specifier.value;
+
+        /* è®°å½•mainå‡½æ•° */
+        if (identifier.value == "main") {
+            main_label_ = PeekNextLabelNum();
+        }
+        quadruples_.push_back(Quadruple(GetNextLabelNum(), identifier.value, "-", "-", "-"));
+        /* å‘å‡½æ•°è¡¨ä¸­åŠ å…¥è¿”å›å˜é‡ */
+        tables_[current_table_stack_.back()].AddSymbol(return_val);
+        /* å³éƒ¨ä¸ºç©ºä¸² ä¸éœ€è¦pop */
+        this->symbol_list_.push_back(SymbolAttribute(pro_left, identifier.value, identifier.row));
+    } else if ("ExitFunTable_m" == pro_left) {
+        /* ExitFunTable_m -> @ */
+        /* å‡½æ•°ç»“æŸ é€€å‡ºä½œç”¨åŸŸ */
+        current_table_stack_.pop_back();
+        /* å³éƒ¨ä¸ºç©ºä¸² ä¸éœ€è¦pop */
+        this->symbol_list_.push_back(SymbolAttribute(pro_left));
+    } else if ("ParamDec" == pro_left) {
+        /* ParamDec -> Specifier <ID> */
+        int         list_length = static_cast<int>(symbol_list_.size());
+        const auto& identifier  = symbol_list_[list_length - 1];
+        const auto& specifier   = symbol_list_[list_length - 2];
+        /* è·å–å½“å‰å‡½æ•°è¡¨ */
+        auto& function_table = tables_[current_table_stack_.back()];
+        /* è·å–å½“å‰å‡½æ•°åœ¨å…¨å±€ç¬¦å·ä¸­çš„ç´¢å¼• */
+        int   table_pos       = tables_[0].FindSymbol(function_table.table_name());
+        auto& function_symbol = tables_[0][table_pos];
+
+        if (-1 != function_table.FindSymbol(identifier.value)) {
+            std::cerr << "è¯­ä¹‰é”™è¯¯ : ç¬¬ " << identifier.row << " è¡Œï¼Œå‡½æ•°å‚æ•° " << identifier.value << " é‡å®šä¹‰" << std::endl;
+            return false;
+        }
+        /* å‡½æ•°è¡¨ä¸­åŠ å…¥å½¢å‚å˜é‡ */
+        int new_var_pos = function_table.AddSymbol(IdentifierInfo(IdentifierInfo::Variable, specifier.value, identifier.value));
+        /* å‡½æ•°å½¢å‚ä¸ªæ•°å¢åŠ  */
+        ++function_symbol.parameter_num;
+
+        int count = static_cast<int>(pro_right.size());
+        while (count--) {
+            this->symbol_list_.pop_back();
+        }
+        this->symbol_list_.push_back(
+            SymbolAttribute(pro_left, identifier.value, identifier.row, current_table_stack_.back(), new_var_pos));
+    } else if ("Block" == pro_left) {
+        /* Block -> Block_m { DefList StmtList } */
+        int count = static_cast<int>(pro_right.size());
+        while (count--) {
+            this->symbol_list_.pop_back();
+        }
+        this->symbol_list_.push_back(SymbolAttribute(pro_left, std::to_string(PeekNextLabelNum())));
+    } else if ("Stmt" == pro_left && "return" == pro_right[0]) {
+        /* Stmt -> return Exp ; */
+        int         list_length = static_cast<int>(symbol_list_.size());
+        const auto& ret_exp     = symbol_list_[list_length - 2];
+        auto&       fun_table   = tables_[current_table_stack_.back()];
+
+        SymbolAttribute symbol_attr;
+        if (!ret_exp.value.empty()) {
+            const auto& fun_name = fun_table.table_name();
+            std::string result   = fun_table[0].id_name;
+            std::string arg_1    = ret_exp.value;
+            quadruples_.push_back(Quadruple(GetNextLabelNum(), ":=", arg_1, "-", result));
+            symbol_attr.value = ret_exp.value;
+        }
+        symbol_attr.token = pro_left;
+
+        quadruples_.push_back(Quadruple(GetNextLabelNum(), "return", "-", "-", fun_table.table_name()));
+
+        int count = static_cast<int>(pro_right.size());
+        while (count--) {
+            this->symbol_list_.pop_back();
+        }
+        this->symbol_list_.push_back(symbol_attr);
+    } else if ("IfStmt_m1" == pro_left) {
+        /* IfStmt_m1 -> @ */
+        ++backpatching_level_;
+        symbol_list_.push_back(SymbolAttribute(pro_left, std::to_string(PeekNextLabelNum())));
+    } else if ("IfStmt_m2" == pro_left) {
+        /* IfStmt_m2 -> @ */
+        int         list_len = static_cast<int>(symbol_list_.size());
+        const auto& if_exp   = symbol_list_[list_len - 2];
+
+        /* å¾…å›å¡«å››å…ƒå¼ : å‡å‡ºå£ */
+        quadruples_.push_back(Quadruple(GetNextLabelNum(), "j=", if_exp.value, "0", ""));
+        backpatching_list_.push_back(quadruples_.size() - 1);
+        /* å¾…å›å¡«å››å…ƒå¼ : çœŸå‡ºå£ */
+        quadruples_.push_back(Quadruple(GetNextLabelNum(), "j", "-", "-", ""));
+        backpatching_list_.push_back(quadruples_.size() - 1);
+
+        symbol_list_.push_back(SymbolAttribute(pro_left, std::to_string(PeekNextLabelNum())));
+    } else if ("IfNext" == pro_left && "IfStmt_next" == pro_right[0]) {
+        /* IfNext -> IfStmt_next else Block */
+        int         list_len  = static_cast<int>(symbol_list_.size());
+        const auto& if_stmt_n = symbol_list_[list_len - 3];
+
+        int count = static_cast<int>(pro_right.size());
+        while (count--) {
+            this->symbol_list_.pop_back();
+        }
+        this->symbol_list_.push_back(SymbolAttribute(pro_left, if_stmt_n.value));
+    } else if ("IfStmt_next" == pro_left) {
+        /* IfStmt_next -> @ */
+        /* If çš„è·³å‡ºè¯­å¥(else ä¹‹å‰) */
+        quadruples_.push_back(Quadruple(GetNextLabelNum(), "j", "-", "-", ""));
+        backpatching_list_.push_back(quadruples_.size() - 1);
+
+        symbol_list_.push_back(SymbolAttribute(pro_left, std::to_string(PeekNextLabelNum())));
+    } else if ("IfStmt" == pro_left) {
+        /* IfStmt -> if IfStmt_m1 ( Exp ) IfStmt_m2 Block IfNext */
+        int         list_len = static_cast<int>(symbol_list_.size());
+        const auto& if_m2    = symbol_list_[list_len - 3];
+        const auto& if_next  = symbol_list_[list_len - 1];
+
+        if (if_next.value.empty()) {
+            /* åªæœ‰ if  */
+            /* çœŸå‡ºå£ */
+            int pos = backpatching_list_.back();
+            backpatching_list_.pop_back();
+            quadruples_[pos].result = if_m2.value;
+            /* å‡å‡ºå£ */
+            pos = backpatching_list_.back();
+            backpatching_list_.pop_back();
+            quadruples_[pos].result = std::to_string(PeekNextLabelNum());
+        } else {
+            /* if - else */
+            /* if å—å‡ºå£ */
+            int pos = backpatching_list_.back();
+            backpatching_list_.pop_back();
+            quadruples_[pos].result = std::to_string(PeekNextLabelNum());
+            /* if çœŸå‡ºå£ */
+            pos = backpatching_list_.back();
+            backpatching_list_.pop_back();
+            quadruples_[pos].result = if_m2.value;
+            /* if å‡å‡ºå£ */
+            pos = backpatching_list_.back();
+            backpatching_list_.pop_back();
+            quadruples_[pos].result = if_next.value;
+        }
+        --backpatching_level_;
+
+        int count = static_cast<int>(pro_right.size());
+        while (count--) {
+            this->symbol_list_.pop_back();
+        }
+        this->symbol_list_.push_back(SymbolAttribute(pro_left));
+    } else if ("WhileStmt_m1" == pro_left) {
+        /* WhileStmt_m1 -> @ */
+        ++backpatching_level_;
+        this->symbol_list_.push_back(SymbolAttribute(pro_left, std::to_string(PeekNextLabelNum())));
+    } else if ("WhileStmt_m2" == pro_left) {
+        /* WhileStmt_m2 -> @ */
+        int         list_len  = static_cast<int>(symbol_list_.size());
+        const auto& while_exp = symbol_list_[list_len - 2];
+
+        /* å¾…å›å¡«å››å…ƒå¼ : å‡å‡ºå£ */
+        quadruples_.push_back(Quadruple(GetNextLabelNum(), "j=", while_exp.value, "0", ""));
+        backpatching_list_.push_back(quadruples_.size() - 1);
+        /* å¾…å›å¡«å››å…ƒå¼ : çœŸå‡ºå£ */
+        quadruples_.push_back(Quadruple(GetNextLabelNum(), "j", "-", "-", ""));
+        backpatching_list_.push_back(quadruples_.size() - 1);
+
+        this->symbol_list_.push_back(SymbolAttribute(pro_left, std::to_string(PeekNextLabelNum())));
+    } else if ("WhileStmt" == pro_left) {
+        /* WhileStmt -> while WhileStmt_m1 ( Exp ) WhileStmt_m2 Block */
+        int         list_len = static_cast<int>(symbol_list_.size());
+        const auto& while_m1 = symbol_list_[list_len - 6];
+        const auto& while_m2 = symbol_list_[list_len - 2];
+
+        /* æ— æ¡ä»¶è·³è½¬åˆ° while çš„æ¡ä»¶åˆ¤æ–­è¯­å¥å¤„ */
+        quadruples_.push_back(Quadruple(GetNextLabelNum(), "j", "-", "-", while_m1.value));
+
+        /* å›å¡« : çœŸå‡ºå£ */
+        int pos = backpatching_list_.back();
+        backpatching_list_.pop_back();
+        quadruples_[pos].result = while_m2.value;
+        /* å›å¡« : å‡å‡ºå£ */
+        pos = backpatching_list_.back();
+        backpatching_list_.pop_back();
+        quadruples_[pos].result = std::to_string(PeekNextLabelNum());
+
+        --backpatching_level_;
+
+        int count = static_cast<int>(pro_right.size());
+        while (count--) {
+            this->symbol_list_.pop_back();
+        }
+        this->symbol_list_.push_back(SymbolAttribute(pro_left));
+    } else if ("Dec" == pro_left && (pro_right.size() <= 1)) {
+        /* Dec -> <ID> */
+        int         list_len      = static_cast<int>(symbol_list_.size());
+        const auto& identifier    = symbol_list_.back();
+        const auto& specifier     = symbol_list_[list_len - 2];
+        auto&       current_table = tables_[current_table_stack_.back()];
+
+        if (-1 != current_table.FindSymbol(identifier.value)) {
+            std::cerr << "è¯­ä¹‰é”™è¯¯ : ç¬¬ " << identifier.row << " è¡Œï¼Œå˜é‡ " << identifier.value << " é‡å®šä¹‰" << std::endl;
+            return false;
+        }
+
+        current_table.AddSymbol(IdentifierInfo(IdentifierInfo::Variable, specifier.value, identifier.value));
+
+        int count = static_cast<int>(pro_right.size());
+        while (count--) {
+            this->symbol_list_.pop_back();
+        }
+        this->symbol_list_.push_back(SymbolAttribute(pro_left, identifier.value));
+    } else if ("Dec" == pro_left && (pro_right.size() <= 1)) {
+        /* Dec -> <ID> = Exp */
+        int         list_len      = static_cast<int>(symbol_list_.size());
+        const auto& identifier    = symbol_list_[list_len - 3];
+        const auto& specifier     = symbol_list_[list_len - 4];
+        auto&       current_table = tables_[current_table_stack_.back()];
+
+        if (-1 != current_table.FindSymbol(identifier.value)) {
+            std::cerr << "è¯­ä¹‰é”™è¯¯ : ç¬¬ " << identifier.row << " è¡Œï¼Œå˜é‡ " << identifier.value << " é‡å®šä¹‰" << std::endl;
+            return false;
+        }
+
+        current_table.AddSymbol(IdentifierInfo(IdentifierInfo::Variable, specifier.value, identifier.value));
+
+        int count = static_cast<int>(pro_right.size());
+        while (count--) {
+            this->symbol_list_.pop_back();
+        }
+        this->symbol_list_.push_back(SymbolAttribute(pro_left, identifier.value));
+    } else if ("Aritop" == pro_left) {
+        /* Aritop -> + | - | * | / */
+        const auto& op = symbol_list_.back();
+
+        int count = static_cast<int>(pro_right.size());
+        while (count--) {
+            this->symbol_list_.pop_back();
+        }
+        this->symbol_list_.push_back(SymbolAttribute(pro_left, op.value));
+    } else if ("Assignop" == pro_left) {
+        /* Assignop -> = | += | -= | *= | /= */
+        const auto& op = symbol_list_.back();
+
+        int count = static_cast<int>(pro_right.size());
+        while (count--) {
+            this->symbol_list_.pop_back();
+        }
+        this->symbol_list_.push_back(SymbolAttribute(pro_left, op.value));
+    } else if ("Relop" == pro_left) {
+        /* Relop -> > | < | >= | <= | == | != */
+        const auto& op = symbol_list_.back();
+
+        int count = static_cast<int>(pro_right.size());
+        while (count--) {
+            this->symbol_list_.pop_back();
+        }
+        this->symbol_list_.push_back(SymbolAttribute(pro_left, op.value));
+    } else if ("CallFunCheck" == pro_left) {
+        /* CallFunCheck -> @ */
+        int         list_len = static_cast<int>(symbol_list_.size());
+        const auto& fun_id   = symbol_list_[list_len - 2];
+
+        int fun_id_pos = tables_[0].FindSymbol(fun_id.value);
+        if (-1 == fun_id_pos) {
+            std::cerr << "è¯­ä¹‰é”™è¯¯ : ç¬¬ " << fun_id.row << " è¡Œï¼Œè°ƒç”¨å‡½æ•° " << fun_id.value << " æœªå®šä¹‰" << std::endl;
+            return false;
+        }
+        if (tables_[0][fun_id_pos].id_type != IdentifierInfo::Function) {
+            std::cerr << "è¯­ä¹‰é”™è¯¯ : ç¬¬ " << fun_id.row << " è¡Œï¼Œè°ƒç”¨å‡½æ•° " << fun_id.value << " æœªå®šä¹‰" << std::endl;
+            return false;
+        }
+        symbol_list_.push_back(SymbolAttribute(pro_left, "", -1, 0, fun_id_pos));
+    } else if ("Args" == pro_left && pro_right[0] == "@") {
+        /* Args -> @ */
+        /* è¿™é‡Œ value = 0 è¡¨ç¤ºè¯¥äº§ç”Ÿå¼äº§ç”Ÿ 0 ä¸ªå‡½æ•°å®å‚ */
+        this->symbol_list_.push_back(SymbolAttribute(pro_left, "0"));
+    } else if ("Args" == pro_left && pro_right.back() == "Exp") {
+        /* Args -> Exp */
+        const auto& exp = symbol_list_.back();
+        quadruples_.push_back(Quadruple(GetNextLabelNum(), "param", exp.value, "-", "-"));
+        int count = static_cast<int>(pro_right.size());
+        while (count--) {
+            this->symbol_list_.pop_back();
+        }
+        this->symbol_list_.push_back(SymbolAttribute(pro_left, "1"));
+    } else if ("Args" == pro_left) {
+        /* Args -> Exp , Args */
+        int list_len = static_cast<int>(symbol_list_.size());
+        const auto& exp = symbol_list_[list_len - 3];
+        quadruples_.push_back(Quadruple(GetNextLabelNum(), "param", exp.value, "-", "-"));
+        int aru_num = std::stoi(symbol_list_.back().value) + 1;
+        int count   = static_cast<int>(pro_right.size());
+        while (count--) {
+            this->symbol_list_.pop_back();
+        }
+        this->symbol_list_.push_back(SymbolAttribute(pro_left, std::to_string(aru_num)));
+    } else if ("Exp" == pro_left && "<ID>" == pro_right[0] && pro_right.back() != "<ID>" && pro_right.back() != "Exp") {
+        /* Exp -> <ID> ( CallFunCheck Args ) */
+        int         list_len   = static_cast<int>(symbol_list_.size());
+        const auto& identifier = symbol_list_[list_len - 5];
+        const auto& args       = symbol_list_[list_len - 2];
+        const auto& check      = symbol_list_[list_len - 3];
+
+        int para_num = tables_[check.table_index][check.in_table_index].parameter_num;
+        if (para_num > std::stoi(args.value)) {
+            std::cerr << "è¯­ä¹‰é”™è¯¯ : ç¬¬ " << identifier.row << " è¡Œ, è°ƒç”¨å‡½æ•°" << identifier.value << ", æ‰€ç»™å‚æ•°è¿‡å°‘"
+                      << std::endl;
+            return false;
+        } else if (para_num < std::stoi(args.value)) {
+            std::cerr << "è¯­ä¹‰é”™è¯¯ : ç¬¬ " << identifier.row << " è¡Œ, è°ƒç”¨å‡½æ•°" << identifier.value << ", æ‰€ç»™å‚æ•°è¿‡å¤š"
+                      << std::endl;
+            return false;
+        }
+        /* ç”Ÿæˆå‡½æ•°è°ƒç”¨å››å…ƒå¼ */
+        std::string new_tmp_var = GetNewTmpVar();
+        quadruples_.push_back(Quadruple(GetNextLabelNum(), "call", identifier.value, "-", new_tmp_var));
+
+        int count = static_cast<int>(pro_right.size());
+        while (count--) {
+            this->symbol_list_.pop_back();
+        }
+        /* æ–°çš„expçš„valueä¸ºä¸´æ—¶å˜é‡å */
+        this->symbol_list_.push_back(SymbolAttribute(pro_left, new_tmp_var));
+    } else if ("Exp" == pro_left && "<ID>" == pro_right[0] && "<ID>" != pro_right.back()) {
+        /* Exp -> <ID> Assignop Exp */
+        int         list_len = static_cast<int>(symbol_list_.size());
+        const auto& id       = symbol_list_[list_len - 3];
+        const auto& sub_exp  = symbol_list_.back();
+        const auto& op       = symbol_list_[list_len - 2];
+
+        if (op.value.size() == 1) {
+            quadruples_.push_back(Quadruple(GetNextLabelNum(), ":" + op.value, sub_exp.value, "-", id.value));
+        } else {
+            quadruples_.push_back(Quadruple(GetNextLabelNum(), op.value, id.value, sub_exp.value, id.value));
+        }
+
+
+        int count = static_cast<int>(pro_right.size());
+        while (count--) {
+            this->symbol_list_.pop_back();
+        }
+        /* æ–°çš„expçš„valueä¸ºä¸´æ—¶å˜é‡å */
+        this->symbol_list_.push_back(SymbolAttribute(pro_left, id.value));
+    } else if ("Exp" == pro_left && "<ID>" == pro_right[0]) {
+        /* Exp -> <ID> */
+        const auto& id = symbol_list_.back();
+        /* todo : whether the <ID> was defined */
+        int count = static_cast<int>(pro_right.size());
+        while (count--) {
+            this->symbol_list_.pop_back();
+        }
+        this->symbol_list_.push_back(SymbolAttribute(pro_left, id.value));
+    } else if ("Exp" == pro_left && ("<INT>" == pro_right[0] || "<FLOAT>" == pro_right[0])) {
+        /* Exp -> <INT> | <FLOAT> */
+        const auto& const_val = symbol_list_.back();
+
+        int count = static_cast<int>(pro_right.size());
+        while (count--) {
+            this->symbol_list_.pop_back();
+        }
+        this->symbol_list_.push_back(SymbolAttribute(pro_left, const_val.value));
+    } else if ("Exp" == pro_left) {
+        int         list_len = static_cast<int>(symbol_list_.size());
+        std::string new_exp_val;
+        if ("(" == pro_right[0] && pro_right.size() == 3u) {
+            /* Exp -> ( Exp ) */
+            const auto& sub_exp = symbol_list_[list_len - 2];
+            new_exp_val = sub_exp.value;
+        } else if (pro_right[1] == "Relop") {
+            /* Exp -> Exp Relop Exp */
+            const auto& sub_exp1 = symbol_list_[list_len - 3];
+            const auto& op       = symbol_list_[list_len - 2];
+            const auto& sub_exp2 = symbol_list_[list_len - 1];
+            int next_label_num = GetNextLabelNum();
+            std::string new_tmp_var = GetNewTmpVar();
+            quadruples_.push_back(Quadruple(next_label_num, "j" + op.value, sub_exp1.value, sub_exp2.value, std::to_string(next_label_num + 3)));
+            quadruples_.push_back(Quadruple(GetNextLabelNum(), ":=", "0", "-", new_tmp_var));
+            quadruples_.push_back(Quadruple(GetNextLabelNum(), "j", "-", "-", std::to_string(next_label_num + 4)));
+            quadruples_.push_back(Quadruple(GetNextLabelNum(), ":=", "1", "-", new_tmp_var));
+
+            new_exp_val = new_tmp_var;
+        } else if (pro_right[1] == "Aritop") {
+            /* Exp -> Exp Aritop Exp */
+            const auto& sub_exp1= symbol_list_[list_len - 3];
+            const auto& op = symbol_list_[list_len - 2];
+            const auto& sub_exp2 = symbol_list_[list_len - 1];
+            std::string new_tmp_var = GetNewTmpVar();
+            quadruples_.push_back(Quadruple(GetNextLabelNum(), op.value, sub_exp1.value, sub_exp2.value, new_tmp_var));
+
+            new_exp_val = new_tmp_var;
+        }
+        int count = static_cast<int>(pro_right.size());
+        while (count--) {
+            this->symbol_list_.pop_back();
+        }
+        this->symbol_list_.push_back(SymbolAttribute(pro_left, new_exp_val));
+    } else {
+        /* ExtDefList -> ExtDef ExtDefList | @ */
+        /* ExtDef -> Specifier FunDec Block ExitFunTable_m */
+        /* FunDec -> <ID> CreateFunTable_m ( VarList ) */
+        /* VarList -> ParamDec , VarList | ParamDec | @ */
+        /* Block_m -> @ */
+        /* StmtList -> Stmt StmtList | @ */
+        /* Stmt -> IfSttmt | WhileStmt | Exp ; */
+        /* IfNext -> @ */
+        /* DefList -> Def DefList | @ */
+        /* Def -> Specifier Dec ; */
+        if (pro_right[0] != "@") {
+            int count = static_cast<int>(pro_right.size());
+            while (count--) {
+                this->symbol_list_.pop_back();
+            }
+        }
+        this->symbol_list_.push_back(SymbolAttribute(pro_left));
+    }
     return true;
 }
 

@@ -6,12 +6,12 @@ program(float a, int b, int c) {
     int j;
     i = 0;
     if (a > (b + c)) {
-        j = a + (b * c + 1);
+        j = (a + (b * c + 1));
     } else {
         j = a;
     }
     while (i <= 100) {  // 哈哈哈哈哈哈哈哈哈哈哈
-        i = j * 2;
+        i = (j * 2);
     }
     return i;
 }

@@ -463,6 +463,7 @@ private:
     std::map<std::pair<int, int>, ActionInfo> goto_table;
     std::map<std::pair<int, int>, ActionInfo> action_table;
 
+public:
     /* 语义分析器 */
     Semantic semantic;
 
@@ -710,7 +711,8 @@ public:
                 switch (action_info.action) {
                     case Action::ShiftIn:
                         symbol_stack.push_back({ action_info.info, token_idx });
-                        semantic.AddSymbolToList(SymbolAttribute(token_stream[i].token, token_stream[i].value));
+                        semantic.AddSymbolToList(
+                            SymbolAttribute(token_stream[i].token, token_stream[i].value, token_stream[i].row));
                         break;
                     case Action::Reduce: {
                         auto& production = productions[action_info.info];
@@ -732,9 +734,14 @@ public:
                         } else {
                             symbol_stack.push_back({ goto_iter->second.info, production.left });
                             --i;
-                            if (!semantic.Analysis(production)) {
+                            std::string              pro_left = symbols[production.left].id;
+                            std::vector<std::string> pro_right;
+                            for (auto& r : production.right) {
+                                pro_right.push_back(symbols[r].id);
+                            }
+                            if (!semantic.Analysis(pro_left, pro_right)) {
                                 /* todo : error of semantic analysis */
-
+                                std::cout << "语义分析错误 ！！！" << std::endl;
                             }
                         }
                     } break;

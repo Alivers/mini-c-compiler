@@ -76,6 +76,8 @@ main(int argc, char **argv) {
     int error_count = grammar.parse_token(lex.getTokenStream());
     cout << "\ntotal errors found : " << error_count << endl;
 
+    grammar.semantic.PrintQuadruple(cout);
+
     fout.close();
 
     return 0;

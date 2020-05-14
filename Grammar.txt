@@ -14,9 +14,7 @@ Program -> ExtDefList
 # Program产生多个外部定义
 ExtDefList -> ExtDef ExtDefList | @
 # ExtDef表示一个全局变量或函数的定义
-ExtDef     -> Specifier ExtDecList ; | Specifier FunDec Block ExitFunTable_m
-# 全局变量定义
-ExtDecList -> <ID> | <ID> , ExtDecList
+ExtDef     -> Specifier <ID> ; | Specifier FunDec Block ExitFunTable_m
 
 # 类型
 Specifier -> void | int | float
@@ -37,7 +35,7 @@ Block_m -> @
 # 语句列表
 StmtList -> Stmt StmtList | @
 # 单语句
-Stmt -> Exp ; | Block | return Exp ; | IfStmt | WhileStmt
+Stmt -> Exp ; | return Exp ; | IfStmt | WhileStmt
 
 IfStmt -> if IfStmt_m1 ( Exp ) IfStmt_m2 Block IfNext
 IfNext -> @ | IfStmt_next else Block
@@ -51,8 +49,7 @@ WhileStmt_m2 -> @
 
 # 块内变量定义
 DefList -> Def DefList | @
-Def -> Specifier DecList ;
-DecList -> Dec | Dec , DecList
+Def -> Specifier Dec ;
 Dec -> <ID> | <ID> = Exp
 
 # 算术运算符
@@ -62,7 +59,7 @@ Assignop -> = | += | -= | *= | /=
 # 关系运算符
 Relop -> > | < | >= | <= | == | !=
 # 基本表达式
-Exp -> <ID> Assignop Exp | Exp && Exp | Exp || Exp | ! Exp | Exp Relop Exp | Exp Aritop Exp | ( Exp ) | <ID> ( CallFunCheck Args ) | <ID> | <INT> | <FLOAT>
+Exp -> <ID> Assignop Exp | Exp Relop Exp | Exp Aritop Exp | ( Exp ) | <ID> ( CallFunCheck Args ) | <ID> | <INT> | <FLOAT>
 CallFunCheck -> @
 # 函数调用实参
 Args -> Exp , Args | Exp | @
