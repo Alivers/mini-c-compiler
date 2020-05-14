@@ -680,18 +680,27 @@ public:
     }
 
 public:
-    int
-    parse_token(std::vector<Token>&& token_stream) {
+    std::pair<int, int>
+    parse_token(std::vector<Token>&& token_stream, std::ostream& os = std::cout) {
         token_stream.push_back({ EndToken, EndToken, static_cast<unsigned>(-1) });
         /* first -> state; second -> symbol */
         std::vector<std::pair<int, int>> symbol_stack;
 
-        int error_count = 0;
+        int g_error_count = 0, s_error_count = 0;
 
         semantic.AddSymbolToList(SymbolAttribute(StartToken));
 
+        int step = 0;
+        os << "步骤 \t 符号栈 \t 产生式 " << std::endl;
+
         /* 栈初始化 */
         symbol_stack.push_back({ 0, get_symbol_index_by_id(EndToken) });
+
+        os << ++step << " \t ";
+        for (auto &p : symbol_stack) {
+            os << "(" << p.first << "," << symbols[p.second].id << ")";
+        }
+        os << " \t " << std::endl;
 
         for (int i = 0; i < static_cast<int>(token_stream.size()); ++i) {
 
@@ -705,12 +714,19 @@ public:
                     symbol_stack.pop_back();
                 } while (action_table.find({ symbol_stack.back().first, token_idx }) == action_table.end());
                 --i;
-                ++error_count;
+                ++g_error_count;
             } else {
                 auto action_info = action_iter->second;
                 switch (action_info.action) {
                     case Action::ShiftIn:
                         symbol_stack.push_back({ action_info.info, token_idx });
+
+                        os << ++step << " \t ";
+                        for (auto& p : symbol_stack) {
+                            os << "(" << p.first << "," << symbols[p.second].id << ")";
+                        }
+                        os << " \t " << std::endl;
+
                         semantic.AddSymbolToList(
                             SymbolAttribute(token_stream[i].token, token_stream[i].value, token_stream[i].row));
                         break;
@@ -730,7 +746,7 @@ public:
                                 symbol_stack.pop_back();
                             } while (goto_table.find({ symbol_stack.back().first, token_idx }) == goto_table.end());
                             --i;
-                            ++error_count;
+                            ++g_error_count;
                         } else {
                             symbol_stack.push_back({ goto_iter->second.info, production.left });
                             --i;
@@ -741,21 +757,32 @@ public:
                             }
                             if (!semantic.Analysis(pro_left, pro_right)) {
                                 /* todo : error of semantic analysis */
-                                std::cout << "语义分析错误 ！！！" << std::endl;
+                                ++s_error_count;
                             }
+
+                            os << ++step << " \t ";
+                            for (auto& p : symbol_stack) {
+                                os << "(" << p.first << "," << symbols[p.second].id << ")";
+                            }
+                            os << " \t ";
+                            os << pro_left << "->";
+                            for (auto& r : pro_right) {
+                                os << r << " ";
+                            }
+                            os << std::endl;
                         }
                     } break;
                     case Action::Accept:
-                        return error_count;
+                        return { g_error_count, s_error_count };
                     default:
                         /* Todo : error */
-                        return error_count;
+                        return { g_error_count, s_error_count };
                         break;
                 }
             }
         }
 
-        return error_count;
+        return { g_error_count, s_error_count };
     }
     void
     printTable(std::ostream& out = std::cout) {

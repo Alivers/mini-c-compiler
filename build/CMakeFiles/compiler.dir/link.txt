@@ -1,1 +1,1 @@
-/usr/bin/g++-8  -g  -rdynamic CMakeFiles/compiler.dir/src/compiler.cc.o  -o compiler 
+/usr/bin/g++-8  -g  -rdynamic CMakeFiles/compiler.dir/src/compiler.cc.o  -o ../bin/compiler 
