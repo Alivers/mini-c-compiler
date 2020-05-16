@@ -1,0 +1,24 @@
+{
+    "C_Cpp.intelliSenseCacheSize": 65536,
+    "C_Cpp.default.intelliSenseMode": "gcc-x64",
+    "C_Cpp.autocomplete": "Disabled",
+    "C_Cpp.intelliSenseEngine": "Disabled",
+    "cmake.buildDirectory": "${workspaceFolder}/build",
+    "ccls.completion.detailedLabel": true,
+    "ccls.misc.compilationDatabaseDirectory": "build",
+    "ccls.completion.include.suffixWhitelist": [
+        ".h",
+        ".hpp",
+        ".hh",
+        "*",
+        ">",
+        "\""
+    ],
+    "ccls.completion.include.whitelist": [
+        ".h",
+        ".hpp",
+        ".hh",
+        "[0-9A-Za-z]*"
+    ],
+    "go.autocompleteUnimportedPackages": true
+}

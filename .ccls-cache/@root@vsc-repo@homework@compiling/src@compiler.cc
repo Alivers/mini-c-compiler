@@ -25,8 +25,10 @@ usage(const char* prompt = nullptr) {
     if (prompt)
         cout << prompt << endl;
     cout << "用法如下：" << endl;
-    cout << "1. compiler -x [代码文件路径] -g [文法文件路径]: 分析类C程序代码文件语法" << endl;
-    cout << "2. compiler -o -x [代码文件路径] -g [文法文件路径]: 分析类C程序代码文件语法，输出过程" << endl;
+    cout << "    ./compiler -x [源文件路径] -g [文法文件路径]: 分析类C程序代码文件语法" << endl;
+    cout << "例：" << endl;
+    cout << "    ./compiler -x source.txt -g grammar.txt" << endl;
+    cout << "    对当前目录下的 source.txt 进行分析处理，文法参考 grammar.txt" << endl;
 }
 
 int
@@ -54,7 +56,6 @@ main(int argc, char** argv) {
                 usage();
                 exit(EXIT_SUCCESS);
             }
-        } else if (!strcmp(argv[i], "-o")) {
         } else {
             usage();
             exit(EXIT_SUCCESS);
