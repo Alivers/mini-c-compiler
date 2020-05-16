@@ -1,7 +1,7 @@
 [
 {
   "directory": "/root/vsc-repo/homework/compiling/build",
-  "command": "/usr/bin/g++-8     -std=c++11 -O3 -Wall -g   -o CMakeFiles/compiler.dir/src/compiler.cc.o -c /root/vsc-repo/homework/compiling/src/compiler.cc",
+  "command": "/usr/bin/g++-8     -std=c++11 -O3 -Wall -O3 -DNDEBUG   -o CMakeFiles/compiler.dir/src/compiler.cc.o -c /root/vsc-repo/homework/compiling/src/compiler.cc",
   "file": "/root/vsc-repo/homework/compiling/src/compiler.cc"
 }
 ]

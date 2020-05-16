@@ -35,10 +35,13 @@ root@PC-Aliver:compiling# ls -l bin/
 ### 分析结果
 
 - 词法分析输出的字符流：
+
 ![lex_out](img/lex_out_demo.png)
 - LR(1)语法分析表：(用excel打开以便查看)
+
 ![lr1_table](img/lr1_table_demo.png)
 - LR(1)分析过程：
+
 ![lr1_process](img/lr1_process_demo.png)
 - 中间代码：
 ```txt
