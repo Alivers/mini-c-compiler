@@ -1,0 +1,7 @@
+步骤 	 符号栈 	 产生式 
+1 	 (0,#) 	 
+2 	 (0,#)(3,float) 	 
+3 	 (0,#)(2,int) 	 
+4 	 (0,#)(7,Specifier) 	 Specifier->int 
+5 	 (0,#)(7,Specifier)(9,<ID>) 	 
+6 	 (0,#)(2,int) 	 
