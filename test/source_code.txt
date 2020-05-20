@@ -1,6 +1,5 @@
 float a;     // Error 1
 int   b;
-int   a;
 int
 program(float a, int b, int c) {
     int i;
@@ -14,7 +13,6 @@ program(float a, int b, int c) {
     while (i <= 100) {  // 哈哈哈哈哈哈哈哈哈哈哈
         i = (j * 2);
     }
-    i = demo(j);
     return i;
 }
 
