@@ -76,13 +76,13 @@ main(int argc, char** argv) {
 
     auto error_count = grammar.parse_token(lex.getTokenStream(), lr1_process);
     if (error_count.first) {
-        cout << "\n 语法分析共发现 " << error_count.first << endl;
+        cout << "\n 语法分析共发现 " << error_count.first << "处错误！" << endl;
     } else {
         cout << "\n 语法分析完成，未发现语法错误。" << endl;
     }
 
     if (error_count.second) {
-        cout << "\n 语义分析共发现 " << error_count.second << endl;
+        cout << "\n 语义分析共发现 " << error_count.second << "处错误！" << endl;
     } else {
         cout << "\n 语义分析完成，未发现语义错误。" << endl;
     }

@@ -1,2 +1,8 @@
 # ccls cache
-.ccls-cache
+.ccls-cache/
+
+# build
+build/*
+
+# bin
+bin/*

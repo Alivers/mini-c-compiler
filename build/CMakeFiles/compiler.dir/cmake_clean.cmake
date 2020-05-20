@@ -1,9 +1,7 @@
 file(REMOVE_RECURSE
-  "../bin/compiler.exe"
-  "../bin/compiler.exe.manifest"
+  "CMakeFiles/compiler.dir/src/compiler.cc.o"
   "../bin/compiler.pdb"
-  "../bin/libcompiler.dll.a"
-  "CMakeFiles/compiler.dir/src/compiler.cc.obj"
+  "../bin/compiler"
 )
 
 # Per-language clean rules from dependency scanning.

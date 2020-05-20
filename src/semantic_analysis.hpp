@@ -549,6 +549,7 @@ Semantic::Analysis(const std::string& pro_left, const std::vector<std::string>& 
         const auto& fun_id   = symbol_list_[list_len - 2];
 
         int fun_id_pos = tables_[0].FindSymbol(fun_id.value);
+        symbol_list_.push_back(SymbolAttribute(pro_left, "", -1, 0, fun_id_pos));
         if (-1 == fun_id_pos) {
             std::cerr << "语义错误 : 第 " << fun_id.row << " 行，调用函数 " << fun_id.value << " 未定义" << std::endl;
             return false;
@@ -557,7 +558,6 @@ Semantic::Analysis(const std::string& pro_left, const std::vector<std::string>& 
             std::cerr << "语义错误 : 第 " << fun_id.row << " 行，调用函数 " << fun_id.value << " 未定义" << std::endl;
             return false;
         }
-        symbol_list_.push_back(SymbolAttribute(pro_left, "", -1, 0, fun_id_pos));
     } else if ("Args" == pro_left && pro_right[0] == "@") {
         /* Args -> @ */
         /* 这里 value = 0 表示该产生式产生 0 个函数实参 */
