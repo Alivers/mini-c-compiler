@@ -1,0 +1,7 @@
+[
+{
+  "directory": "F:/SpecCourse/FundamentalsOfCompiling/CourseDesign/mini-c-compiler/build",
+  "command": "D:/MyApplications/MinGW/bin/g++.exe     -std=c++11 -O3 -Wall -g   -o CMakeFiles/compiler.dir/src/compiler.cc.obj -c F:/SpecCourse/FundamentalsOfCompiling/CourseDesign/mini-c-compiler/src/compiler.cc",
+  "file": "F:/SpecCourse/FundamentalsOfCompiling/CourseDesign/mini-c-compiler/src/compiler.cc"
+}
+]

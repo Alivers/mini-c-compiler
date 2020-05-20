@@ -1,8 +1,8 @@
-# %token -> c | d
-# S -> Program
-# Program -> C C
-# C -> c C
-# C -> d
+%token -> c | d
+S -> Program
+Program -> C C
+C -> c C
+C -> d
 
 # %token -> + | ( | ) | * | id
 # S -> Program
@@ -10,8 +10,8 @@
 # T -> T * F | F
 # F -> ( Program ) | id
 
-%token -> a | b | c | d
-S -> Program
-Program -> a A | b B
-A -> c A | d
-B -> c B | d
+# %token -> a | b | c | d
+# S -> Program
+# Program -> a A | b B
+# A -> c A | d
+# B -> c B | d

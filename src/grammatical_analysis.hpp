@@ -60,15 +60,14 @@ typedef struct Symbol {
 
 /**
  * @brief 文法类；包含产生式集合
- *
  */
 class Grammar {
 public:
-    std::vector<Symbol> symbols;
-    std::set<int>       terminals;
-    std::set<int>       non_terminals;
-    std::vector<Item>   productions;
-    int                 start_production; /* 起始产生式：S->Program的索引 */
+    std::vector<Symbol> symbols;          /* 所有文法符号 */
+    std::set<int>       terminals;        /* 终结符集合(存储终结符在symbols数组中的position) */
+    std::set<int>       non_terminals;    /* 非终结符集合(非终结符在symbols数组中的position) */
+    std::vector<Item>   productions;      /* 产生式集合 */
+    int                 start_production; /* 起始产生式：S->Program在productions数组中的位置 */
 
     static constexpr int   Npos        = -1;                      // 非法位置
     static constexpr char* EmptyStr    = (char* const) "@";       // Epsilon
@@ -368,8 +367,8 @@ private:
                     if (symbol_index == production.left) {
 
                         // 存在直接产生空串的产生式
-                        if (symbols[production.right.front()].type == Symbol::Epsilon) {
-                            return true;
+                        if (symbols[production.right.front()].type ==
+       Symbol::Epsilon) { return true;
                         }
                         // 否则：对当前产生式的所有右部(终结符和非终结符组成)
                         // 若当前产生式的右部全部可多步推导出空串，返回true
@@ -393,6 +392,9 @@ private:
         } */
 };
 
+/**
+ * @brief LR(1)文法计算项集族时使用的闭包类型
+ */
 typedef struct Closure {
     using item_index_t   = int;
     using symbol_index_t = int;
@@ -435,24 +437,35 @@ typedef struct Closure {
     }
 } Closure;
 
+/**
+ * @brief LR(1) 文法，继承Grammar
+ */
 class LR_1 : public Grammar {
 public:
+    /* 分析过程中的动作枚举定义 */
     typedef enum Action {
         ShiftIn, // 移入
         Reduce,  // 归约
         Accept,  // 接受
         Error
     } Action;
-
+    /* 具体的action信息 */
     typedef struct ActionInfo {
         Action action; // 对应动作
         int    info;   // 归约产生式或转移状态
     } ActionInfo;
 
 private:
-    std::vector<Item>    lr_items;
-    std::vector<Closure> item_cluster;
-
+    std::vector<Item>    lr_items;     /* LR(0) 项 */
+    std::vector<Closure> item_cluster; /* 项集族 */
+    /**
+     * 记录转移信息的临时表
+     * 表示某个状态(Closure)下遇到某个符号转移到的下一个状态
+     * 三个 int 的含义依次为 ：
+     *     当前Closure在item_cluster中的index
+     *     当前符号在symbols中的index
+     *     转移到的Closure在item_cluster中的index
+     */
     std::map<std::pair<int, int>, int> goto_tmp;
 
     /**
@@ -494,6 +507,7 @@ public:
     // 计算LR(1)项集簇
     void
     getItems() {
+        /* 判断是否是已经存在的闭包 */
         auto isExistedClosure = [this](const Closure& clo) -> int {
             for (int i = 0; i < static_cast<int>(item_cluster.size()); ++i) {
                 if (item_cluster[i] == clo) {
@@ -502,27 +516,34 @@ public:
             }
             return Grammar::Npos;
         };
+        /* 初始化 item_cluster Closure({S' → ·S, $]}) */
         Item initial_item(
             get_symbol_index_by_id(ExtendStart), { get_symbol_index_by_id(StartToken) }, true, 0, start_production);
         Closure initial_closure;
         initial_closure.item_closure.push_back({ get_lr_items_index_by_item(initial_item), get_symbol_index_by_id(EndToken) });
 
         item_cluster.push_back(std::move(closure(initial_closure)));
-
+        /* item_cluster中的每个项 */
         for (int i = 0; i < static_cast<int>(item_cluster.size()); ++i) {
+            /* 所有文法符号 X */
             for (int s = 0; s < static_cast<int>(symbols.size()); ++s) {
+                /* 文法符号：终结符或非终结符 */
                 if (symbols[s].type != Symbol::Terminal && symbols[s].type != Symbol::NonTerminal) {
                     continue;
                 }
+                /* 计算 Goto(I,X) */
                 auto transfer = gotoState(item_cluster[i], s);
+                /* 为空跳过 */
                 if (transfer.item_closure.empty()) {
                     continue;
                 }
+                /* 已经存在 记录转移状态即可 */
                 int existed_index = isExistedClosure(transfer);
                 if (existed_index != Grammar::Npos) {
                     goto_tmp[{ i, s }] = existed_index;
                     continue;
                 }
+                /* 不存在也不为空 加入进item_cluster并记录转移状态 */
                 item_cluster.push_back(std::move(transfer));
                 /* 记录closure之间的转移关系 */
                 goto_tmp[{ i, s }] = item_cluster.size() - 1;
@@ -609,7 +630,8 @@ public:
                             /* ! debug */
                             // bool is_epsilon = isEpsilon(lr_items[i].right.front());
                             // if (is_epsilon) {
-                            //     std::cout << symbols[lr_items[i].left].id << " -> " << symbols[lr_items[i].right.front()].id
+                            //     std::cout << symbols[lr_items[i].left].id << " -> " <<
+                            //     symbols[lr_items[i].right.front()].id
                             //     << " dot -> " << lr_items[i].dot_pos << std::endl;
                             // }
                             /* ! end debug */
@@ -641,10 +663,10 @@ public:
                             /* ! debug */
                             // bool is_epsilon = isEpsilon(lr0_item.right.front());
                             // if (is_epsilon) {
-                            //     std::cout << "table : " << symbols[lr0_item.left].id << " -> " <<
-                            //     symbols[lr0_item.right.front()].id
-                            //               << " dot -> " << lr0_item.dot_pos << " la = " << symbols[la_symbol].id <<
-                            //               std::endl;
+                            //     std::cout << "table : " << symbols[lr0_item.left].id << "
+                            //     -> " << symbols[lr0_item.right.front()].id
+                            //               << " dot -> " << lr0_item.dot_pos << " la = " <<
+                            //               symbols[la_symbol].id << std::endl;
                             // }
                             /* ! end debug */
 
@@ -697,7 +719,7 @@ public:
         symbol_stack.push_back({ 0, get_symbol_index_by_id(EndToken) });
 
         os << ++step << " \t ";
-        for (auto &p : symbol_stack) {
+        for (auto& p : symbol_stack) {
             os << "(" << p.first << "," << symbols[p.second].id << ")";
         }
         os << " \t " << std::endl;
@@ -732,7 +754,8 @@ public:
                         break;
                     case Action::Reduce: {
                         auto& production = productions[action_info.info];
-                        /* 非空串需要出栈 空串由于右部为空 不需要出栈(直接push空串对应产生式左部非终结符即可) */
+                        /* 非空串需要出栈 空串由于右部为空
+                         * 不需要出栈(直接push空串对应产生式左部非终结符即可) */
                         if (!isEpsilon(production.right.front())) {
                             auto count = production.right.size();
                             while (count--) {

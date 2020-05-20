@@ -14,7 +14,7 @@
 #include <vector>
 
 /**
- * @brief LR(1)的项目/原始文法(包含拓展产生式)产生式
+ * @brief LR(0)的项目/原始文法(包含拓展产生式)产生式
  *        left         - 产生式的左部符号Symbol的index
  *        right        - 产生式右部符号的index列表
  *        is_lr1_item  - 是否是lr1的项

@@ -25,7 +25,7 @@ struct SymbolAttribute {
         : token(token), value(value), row(row), table_index(table_idx), in_table_index(in_table_idx) {}
 };
 /**
- * @brief 语义分析过程中表示符的具体信息
+ * @brief 语义分析过程中标识符的具体信息
  */
 struct IdentifierInfo {
     /**
@@ -134,6 +134,9 @@ struct Quadruple {
         : label(label), operate(ope), arg_1(arg1), arg_2(arg2), result(res) {}
 };
 
+/**
+ * @brief 语义分析器
+ */
 class Semantic {
 public:
     static constexpr int Npos = -1;
